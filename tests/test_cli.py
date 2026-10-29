@@ -57,7 +57,7 @@ def run(args: list[str], capsys: pytest.CaptureFixture[str]) -> tuple[int, str, 
     return code, captured.out, captured.err
 
 
-@pytest.mark.parametrize("output", [[], ["--quiet"], ["--json"], ["--sarif"]])
+@pytest.mark.parametrize("output", [[], ["--brief"], ["--quiet"], ["--json"], ["--sarif"]])
 @pytest.mark.parametrize("paths", [[], ["--show-full-paths"]])
 def test_no_output_format_ever_contains_an_unmasked_secret(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], output: list[str], paths: list[str]
@@ -162,6 +162,28 @@ def test_quiet_prints_only_the_summary_line(
     assert "findings (" in out
 
 
+def test_brief_prints_one_line_per_finding_and_keeps_exit_codes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    plant_secrets(tmp_path)
+
+    full_code, full, _ = run(["scan", str(tmp_path)], capsys)
+    code, out, _ = run(["scan", str(tmp_path), "--brief"], capsys)
+
+    assert code == full_code == EXIT_FINDINGS
+    assert "Why:" in full and "Why:" not in out
+    assert out.splitlines()[-1] == (
+        "Run without --brief for why each finding matters and how to fix it."
+    )
+
+
+def test_brief_cannot_be_combined_with_other_formats() -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        main(["scan", "--brief", "--json"])
+
+    assert exit_info.value.code == EXIT_ERROR
+
+
 def test_paths_are_home_relative_unless_full_paths_requested(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -177,7 +199,7 @@ def test_paths_are_home_relative_unless_full_paths_requested(
     assert all(Path(p).is_absolute() for p in full_paths)
 
 
-@pytest.mark.parametrize("output", [[], ["--quiet"], ["--json"], ["--sarif"]])
+@pytest.mark.parametrize("output", [[], ["--brief"], ["--quiet"], ["--json"], ["--sarif"]])
 def test_output_file_is_utf8_without_bom(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], output: list[str]
 ) -> None:

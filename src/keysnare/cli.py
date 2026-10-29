@@ -19,6 +19,7 @@ from keysnare.scanner import scan
 from keysnare.terminal import (
     ProgressLine,
     enable_windows_colors,
+    render_brief,
     render_summary,
     render_text,
     use_color,
@@ -71,6 +72,11 @@ def build_parser() -> argparse.ArgumentParser:
     output.add_argument("--json", action="store_true", help="print a JSON report")
     output.add_argument("--sarif", action="store_true", help="print a SARIF 2.1.0 report")
     output.add_argument("--quiet", action="store_true", help="print only the summary line")
+    output.add_argument(
+        "--brief",
+        action="store_true",
+        help="print one line per finding, without explanations and fix steps",
+    )
     scan_parser.add_argument(
         "--fail-on",
         choices=[severity.value for severity in Severity],
@@ -230,6 +236,8 @@ def _render(args: argparse.Namespace, context: ReportContext) -> str:
     if args.quiet:
         return render_summary(context) + "\n"
     color = not args.output and use_color(sys.stdout, os.environ) and enable_windows_colors()
+    if args.brief:
+        return render_brief(context, color)
     return render_text(context, color)
 
 

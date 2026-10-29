@@ -1,12 +1,20 @@
 import io
+import re
 from pathlib import Path
 
 import pytest
 
 from keysnare.locations import Category
 from keysnare.report import ReportContext
+from keysnare.risk import risk_for
 from keysnare.scanner import Finding, ScanResult, SkippedPath
-from keysnare.terminal import ProgressLine, render_summary, render_text, use_color
+from keysnare.terminal import (
+    ProgressLine,
+    render_brief,
+    render_summary,
+    render_text,
+    use_color,
+)
 
 HOME = Path.home()
 SECRET = "fake" + "Secret" + "Value123"
@@ -81,6 +89,49 @@ def test_quiet_summary_is_one_line() -> None:
 def test_colors_only_when_requested() -> None:
     assert ANSI not in render_text(context(FINDINGS), color=False)
     assert ANSI in render_text(context(FINDINGS), color=True)
+    assert ANSI not in render_brief(context(FINDINGS), color=False)
+    assert ANSI in render_brief(context(FINDINGS), color=True)
+
+
+def test_brief_shows_one_line_per_finding_grouped_by_severity() -> None:
+    env = f"{Path('~') / 'app' / '.env'}:3"
+    ssh_key = f"{Path('~') / '.ssh' / 'id_rsa'}:1"
+    claude = Path("~") / ".claude" / "c.json"
+
+    lines = render_brief(context(FINDINGS), color=False).splitlines()
+    columns = [re.split(r" {2,}", line) for line in lines]
+
+    assert lines[0] == (
+        "4 findings (1 critical, 2 high, 0 medium, 1 low) in 12 files checked, scanned in 8.0s"
+    )
+    assert columns[1:] == [
+        [""],
+        ["CRITICAL", "SSH key without a passphrase", ssh_key],
+        [""],
+        ["HIGH", "Claude Code login", "fake****e123", f"{claude}:1"],
+        ["HIGH", "Claude Code login", "fake****e123", f"{claude}:2"],
+        [""],
+        ["LOW", risk_for("K-SECRET-NAME").title, "fake****e123", env],
+        [""],
+        ["Run without --brief for why each finding matters and how to fix it."],
+    ]
+    finding_lines = [line for line in lines if line.startswith(("CRITICAL", "HIGH", "LOW"))]
+    assert len({line.index("~") for line in finding_lines}) == 1, "paths line up in a column"
+
+
+def test_brief_has_no_explanations_or_fixes() -> None:
+    text = render_brief(context(FINDINGS), color=False)
+
+    assert "Why:" not in text
+    assert "How to fix" not in text
+    assert SECRET not in text
+    assert str(HOME) not in text
+
+
+def test_brief_with_no_findings_is_just_the_summary() -> None:
+    assert render_brief(context([]), color=False) == (
+        "No plain-text credentials found in 12 files checked, scanned in 8.0s\n"
+    )
 
 
 def test_progress_line_updates_at_most_ten_times_a_second() -> None:

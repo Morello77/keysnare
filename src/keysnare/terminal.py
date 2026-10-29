@@ -10,8 +10,10 @@ from keysnare import __version__
 from keysnare.guidance import fix_for
 from keysnare.report import FindingGroup, ReportContext, display_masked
 from keysnare.risk import Severity
+from keysnare.scanner import Finding
 
 WIDTH = 100
+BRIEF_HINT = "Run without --brief for why each finding matters and how to fix it."
 PROGRESS_INTERVAL_SECONDS = 0.1
 RESET = "\x1b[0m"
 BOLD = "\x1b[1m"
@@ -106,13 +108,47 @@ def render_text(context: ReportContext, color: bool) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_brief(context: ReportContext, color: bool) -> str:
+    """Return the summary and one line per finding, grouped by severity, without explanations."""
+    style = _Style(color)
+    lines = [render_summary(context)]
+    if not context.result.findings:
+        return lines[0] + "\n"
+    rows = [
+        (
+            group.severity,
+            group.risk.title,
+            display_masked(finding) or "",
+            _location(finding, context),
+        )
+        for group in context.groups
+        for finding in group.findings
+    ]
+    severity_width = max(len(severity.value) for severity, _, _, _ in rows)
+    title_width = max(len(title) for _, title, _, _ in rows)
+    masked_width = max(len(masked) for _, _, masked, _ in rows)
+    current: Severity | None = None
+    for severity, title, masked, location in rows:
+        if severity is not current:
+            current = severity
+            lines.append("")
+        label = style.severity(severity, severity.value.upper().ljust(severity_width))
+        value = f"{masked.ljust(masked_width)}  " if masked_width else ""
+        lines.append(f"{label}  {title.ljust(title_width)}  {value}{location}")
+    lines += ["", BRIEF_HINT]
+    return "\n".join(lines) + "\n"
+
+
+def _location(finding: Finding, context: ReportContext) -> str:
+    location = context.path(finding.path)
+    return location if finding.line is None else f"{location}:{finding.line}"
+
+
 def _render_group(group: FindingGroup, context: ReportContext, style: "_Style") -> list[str]:
     count = len(group.findings)
     lines = ["", f"  {style.bold(group.risk.title)} [{group.rule_id}] - {count} found"]
     for finding in group.findings:
-        location = context.path(finding.path)
-        if finding.line is not None:
-            location += f":{finding.line}"
+        location = _location(finding, context)
         masked = display_masked(finding)
         lines.append(f"    {location}  {masked}" if masked else f"    {location}")
     lines += _wrap(f"Why: {group.risk.why}", "    ", "         ")

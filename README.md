@@ -25,6 +25,7 @@ Python 3.10 or newer. Windows, macOS and Linux for scanning; decoy traps are Win
 ```
 keysnare scan                                  # scan your home folder
 keysnare scan ~/code/my-project                # scan one folder or file
+keysnare scan --brief                          # one line per finding, no fix steps
 keysnare scan --sarif --output keysnare.sarif  # report for code-scanning tools
 keysnare trap install                          # Windows: plant decoys (see below)
 ```

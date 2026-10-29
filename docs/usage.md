@@ -7,8 +7,8 @@ secret.
 
 ```
 keysnare --version
-keysnare scan [PATH] [--json | --sarif | --quiet] [--fail-on LEVEL] [--show-full-paths]
-              [--output FILE]
+keysnare scan [PATH] [--json | --sarif | --quiet | --brief] [--fail-on LEVEL]
+              [--show-full-paths] [--output FILE]
 ```
 
 `keysnare scan` with no path scans your home folder: every known credential location (see
@@ -25,11 +25,12 @@ that folder or file.
 | `--json` | Print a JSON report instead of the terminal report. |
 | `--sarif` | Print a SARIF 2.1.0 report, for code-scanning tools such as GitHub code scanning. |
 | `--quiet` | Print only the one-line summary. |
+| `--brief` | Print the summary, then one line per finding (severity, finding, masked value, path and line), grouped by severity, without the explanations and fix steps. Masking and exit codes are the same as the full report. |
 | `--fail-on LEVEL` | Lowest severity that makes the exit code 1: `critical`, `high` (default), `medium` or `low`. |
 | `--show-full-paths` | Show full paths. By default your home folder is shown as `~`. |
 | `--output FILE` | Write the report to `FILE` instead of the screen: UTF-8 without a byte-order mark, `\n` line endings, no colors. |
 
-`--json`, `--sarif` and `--quiet` cannot be combined.
+`--json`, `--sarif`, `--quiet` and `--brief` cannot be combined.
 
 ## Exit codes
 
