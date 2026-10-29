@@ -5,9 +5,12 @@ from xml.sax.saxutils import escape
 
 
 class FakeSystem:
-    def __init__(self, elevated: bool = False, fail_register: bool = False) -> None:
+    def __init__(
+        self, elevated: bool = False, fail_register: bool = False, fail_mark: bool = False
+    ) -> None:
         self.elevated = elevated
         self.fail_register = fail_register
+        self.fail_mark = fail_mark
         self.task_xml: str | None = None
         self.not_indexed: list[Path] = []
 
@@ -18,6 +21,8 @@ class FakeSystem:
         return "S-1-5-21-1-2-3-1001"
 
     def mark_not_indexed(self, path: Path) -> None:
+        if self.fail_mark:
+            raise OSError("The parameter is incorrect")
         self.not_indexed.append(path)
 
     def register_task(self, xml: str) -> None:

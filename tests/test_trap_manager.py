@@ -103,6 +103,33 @@ def test_failed_install_rolls_everything_back(tmp_path: Path) -> None:
     assert not paths.state_file.exists()
 
 
+def test_install_error_names_the_task_registration_step(tmp_path: Path) -> None:
+    system = FakeSystem(fail_register=True)
+    paths, machine = setup(tmp_path)
+
+    with pytest.raises(TrapError) as error:
+        install(system, prepare_install(system, machine, paths), paths, HANDLER, "now")
+
+    assert str(error.value) == (
+        "Install failed while registering the alert task with Task Scheduler, "
+        "and was rolled back: Access is denied"
+    )
+
+
+def test_install_error_names_the_decoy_with_a_home_relative_path(tmp_path: Path) -> None:
+    system = FakeSystem(fail_mark=True)
+    paths, machine = setup(tmp_path)
+    plan = prepare_install(system, machine, paths)
+    first = Path("~") / plan.decoys[0].path.relative_to(paths.home)
+
+    with pytest.raises(TrapError) as error:
+        install(system, plan, paths, HANDLER, "now")
+
+    assert f"while marking {first} as not content indexed" in str(error.value)
+    assert str(paths.home) not in str(error.value)
+    assert snapshot(paths.home) == set()
+
+
 def test_remove_restores_the_home_folder_exactly(tmp_path: Path) -> None:
     system = FakeSystem()
     paths, machine = setup(tmp_path)

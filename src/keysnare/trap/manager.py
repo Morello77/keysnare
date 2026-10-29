@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol
 
+from keysnare.report import display_path
 from keysnare.trap.decoys import make_decoy
 from keysnare.trap.identity import file_identity
 from keysnare.trap.placement import (
@@ -110,32 +111,40 @@ def install(
     records: list[DecoyRecord] = []
     created_files: list[Path] = []
     created_folders: list[Path] = []
+    step = "starting"
     try:
         for planned in plan.decoys:
+            shown = display_path(planned.path, paths.home, show_full_paths=False)
+            step = f"creating the folder for {shown}"
             created_folders += _make_folders(planned.path.parent)
+            step = f"creating the decoy {shown}"
             data = make_decoy(planned.kind, planned.path).content.encode("utf-8")
             try:
                 with open(planned.path, "xb") as decoy_file:
                     decoy_file.write(data)
             except FileExistsError as error:
                 raise TrapError(
-                    f"{planned.path} appeared while installing; it was left untouched."
+                    f"{shown} appeared while installing; it was left untouched."
                 ) from error
             created_files.append(planned.path)
+            step = f"marking {shown} as not content indexed"
             system.mark_not_indexed(planned.path)
+            step = f"recording the file identity of {shown}"
             # Recorded last, so later checks compare against the finished file.
             identity = file_identity(planned.path)
             if identity is None:
-                raise TrapError(f"{planned.path} disappeared while installing.")
+                raise TrapError(f"{shown} disappeared while installing.")
             records.append(DecoyRecord(planned.kind, planned.path, identity))
         state = TrapState(tuple(records), tuple(created_folders), AuditBefore.UNKNOWN, now)
+        step = "saving the trap records"
         save_state(state, paths.state_file)
+        step = "registering the alert task with Task Scheduler"
         system.register_task(build_task_xml(handler, system.user_sid()))
     except (OSError, TrapError) as error:
         _undo(created_files, created_folders, paths)
         if isinstance(error, TrapError):
             raise
-        raise TrapError(f"Install failed and was rolled back: {error}") from error
+        raise TrapError(f"Install failed while {step}, and was rolled back: {error}") from error
     return state
 
 
