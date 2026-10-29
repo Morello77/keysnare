@@ -1,0 +1,82 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "keysnare"
+version = "0.1.0"
+description = "Find plain-text credentials on developer machines and trap credential stealers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Morello Developers" }]
+keywords = ["security", "secrets", "credentials", "supply-chain", "honeytoken", "scanner"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Morello77/keysnare"
+Documentation = "https://github.com/Morello77/keysnare/blob/main/docs/usage.md"
+Issues = "https://github.com/Morello77/keysnare/issues"
+Security = "https://github.com/Morello77/keysnare/security/policy"
+
+[project.scripts]
+keysnare = "keysnare.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "jsonschema",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "types-jsonschema",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/keysnare"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use plain assert statements, which rule S101 would otherwise flag.
+"tests/**" = ["S101"]
+# Admin command templates are published word for word; wrapping their lines would change what
+# users compare and run (and would add spaces inside task arguments).
+"src/keysnare/trap/admin.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["keysnare"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

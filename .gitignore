@@ -1,0 +1,21 @@
+# Python build and cache files
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Never commit real secrets
+.env
+.env.*
+!.env.example
