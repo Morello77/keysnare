@@ -658,7 +658,7 @@ and its full path is printed. `--purge` deletes it too. If it holds no alerts, i
 | 3 | Audit rule (SACL) "Everyone: Read data, success" on each decoy | Yes | User, with the printed commands | Deleted with the decoy file. Never added to any other file. |
 | 4 | "Not content indexed" attribute on each decoy | No | `trap install` | Deleted with the decoy file |
 | 5 | Scheduled task `\KeySnare\DecoyRead` (the user's own, least privilege, Application-log trigger) | No | `trap install` | Task deleted by `trap remove` |
-| 6 | KeySnare data folder `%LOCALAPPDATA%\KeySnare\` | No | `trap install`, alerts | Deleted; `alerts.jsonl` kept if it has alerts (see above) |
+| 6 | KeySnare data folder `%LOCALAPPDATA%\KeySnare\` (with Microsoft Store Python, Windows redirects it to the Python package's private `LocalCache` folder; messages show the real location) | No | `trap install`, alerts | Deleted; `alerts.jsonl` kept if it has alerts (see above) |
 | 7 | Security log entries (event 4663) and Application log entries (KeySnare events 1 and 100) | No | Windows | Not deleted. KeySnare never clears or edits Windows logs. |
 | 8 | Folder `C:\ProgramData\KeySnare` (owner Administrators, protected permissions) and the file `decoy-reads.evtx` inside it | Yes | User, with the printed setup commands | Removal commands: same link and ownership checks as setup, then the file and folder are deleted |
 | 9 | Application-log event source `KeySnare` (registry key `HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Application\KeySnare`, created by `eventcreate.exe`) | Yes | User, with the printed setup commands | Removal commands delete it |

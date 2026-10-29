@@ -336,6 +336,12 @@ $auditpol = [Environment]::SystemDirectory + '\auditpol.exe'
 `trap remove` keeps your alert history (`%LOCALAPPDATA%\KeySnare\alerts.jsonl`) if it contains
 any alerts, and prints where it is. `--purge` deletes it too.
 
+**Microsoft Store Python.** Windows keeps the files that Store Python writes under AppData in a
+private folder, `%LOCALAPPDATA%\Packages\<Python package>\LocalCache\Local\KeySnare`, so that is
+where the trap records and alert history live. `trap install` says so before it asks to continue.
+Uninstalling or resetting that Python deletes the folder; `trap remove` can then only list the
+decoys for you to delete by hand. For traps, the python.org installer avoids this.
+
 ## Saving a report to a file
 
 Use `--output`, especially in PowerShell:

@@ -47,6 +47,12 @@ After running the commands: what did the first command show next to "File System
   4  Success and Failure
   5  Not sure
 Answer [5]: """
+STORE_PYTHON_WARNING = """
+Note: this Python is the Microsoft Store version. Windows keeps the files it writes under
+AppData in a private folder, so KeySnare's trap records and alert history will be in:
+  {folder}
+Uninstalling or resetting that Python deletes this folder. `keysnare trap remove` could then
+only list the decoys for you to delete by hand. The python.org installer avoids this."""
 OPEN_ADMIN_POWERSHELL = """\
   1. Press Win+R and type: powershell -NoProfile
   2. Press Ctrl+Shift+Enter to open it as administrator.
@@ -93,8 +99,10 @@ def run_install(deps: TrapDeps, yes: bool) -> int:
     _say(deps, "It will also:")
     _say(deps, '  - mark each decoy "not content indexed", so Windows Search skips it')
     _say(deps, f"  - register the scheduled task {TASK_NAME} (runs as you, without admin rights)")
-    _say(deps, f"  - keep its records in {deps.paths.data_dir}")
+    _say(deps, f"  - keep its records in {_records_folder(deps)}")
     _say(deps, "Nothing else is changed. `keysnare trap remove` undoes all of it.")
+    if deps.paths.store_data_dir is not None:
+        _say(deps, STORE_PYTHON_WARNING.format(folder=_records_folder(deps)))
     if not yes and deps.ask("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
         _say(deps, "Nothing was changed.")
         return EXIT_DECLINED
@@ -118,6 +126,7 @@ def run_status(deps: TrapDeps) -> int:
     if not report.installed:
         _say(deps, "Traps are not installed. Run `keysnare trap install`.")
         return EXIT_OK
+    _say(deps, f"Records: {_records_folder(deps)}")
     _say(deps, "Decoys:")
     for path, decoy_status in report.decoys.items():
         _say(deps, f"  {_show(deps, path)}: {decoy_status}")
@@ -199,7 +208,7 @@ def _report_removal(deps: TrapDeps, result: RemoveResult) -> None:
             _say(deps, f"  {_show(deps, path)}")
     _say(deps, "Alert task deleted." if result.task_deleted else "No alert task was registered.")
     if result.kept_alerts:
-        _say(deps, f"Your alert history was kept: {result.kept_alerts}")
+        _say(deps, f"Your alert history was kept: {deps.paths.real_location(result.kept_alerts)}")
     _say(deps, "\nTo finish, remove the admin parts (the SYSTEM relay task, the event source and")
     _say(deps, "C:\\ProgramData\\KeySnare) with these commands:")
     _say(deps, OPEN_ADMIN_POWERSHELL + "\n")
@@ -214,6 +223,10 @@ def _report_removal(deps: TrapDeps, result: RemoveResult) -> None:
         deps.out.write(AUDIT_RESTORE_COMMANDS)
     else:
         _say(deps, '"File System" auditing was already on before install, so it stays on.')
+
+
+def _records_folder(deps: TrapDeps) -> str:
+    return _show(deps, deps.paths.real_location(deps.paths.data_dir))
 
 
 def _show(deps: TrapDeps, path: Path) -> str:

@@ -1,5 +1,6 @@
 import io
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -73,6 +74,44 @@ def test_install_shows_plan_asks_then_prints_admin_commands(tmp_path: Path) -> N
     assert "keysnare trap test" in text
     state = load_state(d.paths.state_file)
     assert state is not None and state.audit_before is AuditBefore.NO_AUDITING
+
+
+def store_python(d: TrapDeps) -> Path:
+    real = d.paths.home / "AppData" / "Local" / "Packages" / "Python" / "LocalCache" / "KeySnare"
+    d.paths = replace(d.paths, store_data_dir=real)
+    return real
+
+
+def test_install_warns_about_store_python_before_asking(tmp_path: Path) -> None:
+    d, out = deps(tmp_path, answers=["n"])
+    real = store_python(d)
+
+    run_install(d, yes=False)
+
+    text = out.getvalue()
+    shown = str(Path("~") / real.relative_to(d.paths.home))
+    warning = text.index("Microsoft Store version")
+    assert warning < text.index("Continue? [y/N]")
+    assert shown in text and "Uninstalling or resetting that Python deletes this folder" in text
+
+
+def test_no_store_python_warning_for_other_pythons(tmp_path: Path) -> None:
+    d, out = deps(tmp_path, answers=["n"])
+
+    run_install(d, yes=False)
+
+    assert "Microsoft Store" not in out.getvalue()
+
+
+def test_remove_shows_the_real_location_of_kept_alerts(tmp_path: Path) -> None:
+    d, out = deps(tmp_path)
+    real = store_python(d)
+    run_install(d, yes=True)
+    d.paths.alerts_file.write_text(json.dumps({"kind": "alert"}) + "\n")
+
+    run_remove(d, purge=False)
+
+    assert f"Your alert history was kept: {real / 'alerts.jsonl'}" in out.getvalue()
 
 
 def test_install_does_nothing_if_the_user_says_no(tmp_path: Path) -> None:

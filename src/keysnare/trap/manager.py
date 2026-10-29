@@ -53,6 +53,8 @@ class TrapPaths:
 
     home: Path
     data_dir: Path
+    # Set when Microsoft Store Python keeps data_dir in its private per-package folder instead.
+    store_data_dir: Path | None = None
 
     @property
     def state_file(self) -> Path:
@@ -61,6 +63,15 @@ class TrapPaths:
     @property
     def alerts_file(self) -> Path:
         return self.data_dir / "alerts.jsonl"
+
+    def real_location(self, path: Path) -> Path:
+        """Return where a file in the data folder really is on disk, for messages to the user."""
+        if self.store_data_dir is None:
+            return path
+        try:
+            return self.store_data_dir / path.relative_to(self.data_dir)
+        except ValueError:
+            return path
 
 
 @dataclass

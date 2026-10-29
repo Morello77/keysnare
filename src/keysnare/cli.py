@@ -152,8 +152,10 @@ def _windows_trap_deps() -> TrapDeps:
     home = Path.home()
     folder = data_dir(os.environ)
     return TrapDeps(
-        system=windows.WindowsSystem(folder),
-        paths=TrapPaths(home=home, data_dir=folder),
+        system=windows.WindowsSystem(),
+        paths=TrapPaths(
+            home=home, data_dir=folder, store_data_dir=windows.store_python_data_dir(folder)
+        ),
         machine=lambda: gather_machine(home, os.environ),
         handler=windows.handler_path(),
         protected_dirs=windows.protected_dirs,

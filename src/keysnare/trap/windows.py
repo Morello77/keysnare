@@ -23,6 +23,14 @@ TOOL_TIMEOUT_SECONDS = 30
 READER_SCRIPT = (
     "Start-Sleep -Milliseconds 1500; $null = [IO.File]::ReadAllBytes($env:KEYSNARE_DECOY)"
 )
+# Registers the user's own task, non-elevated. No -Force: an existing task is never replaced.
+REGISTER_TASK_SCRIPT = (
+    "$xml = [Text.Encoding]::UTF8.GetString("
+    "[Convert]::FromBase64String([Console]::In.ReadToEnd().Trim()));"
+    "$null = Register-ScheduledTask -TaskPath '\\KeySnare\\' -TaskName 'DecoyRead' "
+    "-Xml $xml -ErrorAction Stop"
+)
+APPMODEL_ERROR_NO_PACKAGE = 15700
 
 
 def is_windows() -> bool:
@@ -47,9 +55,6 @@ def system_directory() -> Path:
 class WindowsSystem:
     """The TrapSystem operations, done with built-in Windows tools."""
 
-    def __init__(self, data_dir: Path) -> None:
-        self.data_dir = data_dir
-
     def is_elevated(self) -> bool:
         return is_elevated()
 
@@ -72,13 +77,25 @@ class WindowsSystem:
             raise ctypes.WinError()
 
     def register_task(self, xml: str) -> None:
-        task_file = self.data_dir / "alert-task.xml"
-        task_file.write_text(xml, encoding="utf-16")
-        try:
-            # No /F: an existing task with this name is never overwritten.
-            _run_tool("schtasks.exe", "/Create", "/TN", TASK_NAME, "/XML", str(task_file))
-        finally:
-            task_file.unlink(missing_ok=True)
+        # No file is handed to another program: Microsoft Store Python redirects files it writes
+        # under AppData to a private folder, where schtasks.exe would not find them. The XML
+        # travels on stdin as base64, so no code page can garble non-English letters in paths.
+        completed = subprocess.run(  # noqa: S603 - built-in PowerShell, constant script
+            [
+                str(powershell_path()),
+                "-NoProfile",
+                "-NonInteractive",
+                "-EncodedCommand",
+                _encoded(REGISTER_TASK_SCRIPT),
+            ],
+            input=base64.b64encode(xml.encode("utf-8")).decode("ascii"),
+            capture_output=True,
+            text=True,
+            timeout=TOOL_TIMEOUT_SECONDS,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise OSError(completed.stderr.strip() or "Register-ScheduledTask failed")
 
     def delete_task(self) -> bool:
         if self.task_status() is None:
@@ -140,12 +157,16 @@ def path_forms() -> PathForms:
 
 def notify(text: str) -> bool:
     """Show a Windows notification. The text travels in an environment variable, never as code."""
-    encoded = base64.b64encode(NOTIFY_SCRIPT.encode("utf-16-le")).decode("ascii")
-    powershell = system_directory() / "WindowsPowerShell" / "v1.0" / "powershell.exe"
     environment = {**os.environ, "KEYSNARE_ALERT_TEXT": text}
     try:
         completed = subprocess.run(  # noqa: S603 - built-in PowerShell, constant script
-            [str(powershell), "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+            [
+                str(powershell_path()),
+                "-NoProfile",
+                "-NonInteractive",
+                "-EncodedCommand",
+                _encoded(NOTIFY_SCRIPT),
+            ],
             env=environment,
             capture_output=True,
             timeout=TOOL_TIMEOUT_SECONDS,
@@ -170,10 +191,14 @@ def start_reader(decoy: Path) -> int:
 
     The pause leaves time to record its process ID; the path travels in an environment variable.
     """
-    encoded = base64.b64encode(READER_SCRIPT.encode("utf-16-le")).decode("ascii")
-    powershell = system_directory() / "WindowsPowerShell" / "v1.0" / "powershell.exe"
     reader = subprocess.Popen(  # noqa: S603 - built-in PowerShell, constant script
-        [str(powershell), "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+        [
+            str(powershell_path()),
+            "-NoProfile",
+            "-NonInteractive",
+            "-EncodedCommand",
+            _encoded(READER_SCRIPT),
+        ],
         env={**os.environ, "KEYSNARE_DECOY": str(decoy)},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -181,11 +206,49 @@ def start_reader(decoy: Path) -> int:
     return reader.pid
 
 
+def powershell_path() -> Path:
+    """Return the built-in Windows PowerShell, by its absolute System32 path."""
+    return system_directory() / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+
+
+def store_python_data_dir(data_dir: Path) -> Path | None:
+    """Return where Microsoft Store Python really keeps `data_dir`, or None for other Pythons.
+
+    Store Python writes under AppData go to a private per-package folder that only it sees.
+    """
+    family = _package_family_name()
+    if family is None:
+        return None
+    return data_dir.parent / "Packages" / family / "LocalCache" / "Local" / data_dir.name
+
+
 def handler_path() -> Path:
     """Return the windowless Python (pythonw.exe) next to the running one."""
     executable = Path(sys.executable)
     windowless = executable.with_name("pythonw.exe")
     return windowless if windowless.is_file() else executable
+
+
+def _encoded(script: str) -> str:
+    return base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+
+
+def _package_family_name() -> str | None:
+    if sys.platform != "win32":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    get_family = getattr(ctypes.windll.kernel32, "GetCurrentPackageFamilyName", None)
+    if get_family is None:
+        return None
+    length = wintypes.UINT(0)
+    if get_family(ctypes.byref(length), None) == APPMODEL_ERROR_NO_PACKAGE:
+        return None
+    buffer = ctypes.create_unicode_buffer(length.value)
+    if get_family(ctypes.byref(length), buffer) != 0:
+        return None
+    return buffer.value
 
 
 def _run_tool(tool: str, *arguments: str) -> str:
