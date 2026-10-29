@@ -89,6 +89,36 @@ RISKS: dict[str, Risk] = {
         "Password in a URL",
         "A username and password written into a URL, often for a database or private registry.",
     ),
+    "F-STRIPE-LIVE-KEY": Risk(
+        CRITICAL,
+        "Stripe live key",
+        "Lets an attacker act on your live Stripe account within the key's permissions: issue "
+        "refunds, change payout details or read customer data.",
+    ),
+    "F-STRIPE-TEST-KEY": Risk(
+        LOW,
+        "Stripe test-mode key",
+        "A test-mode key cannot move real money, but it identifies your Stripe account, and the "
+        "matching live key is often stored nearby.",
+    ),
+    "F-SLACK-TOKEN": Risk(
+        HIGH,
+        "Slack token",
+        "Lets an attacker read and post messages in your Slack workspace with the token's "
+        "permissions, which makes phishing your colleagues easy.",
+    ),
+    "F-SENDGRID-KEY": Risk(
+        HIGH,
+        "SendGrid API key",
+        "Lets an attacker send email from your verified domains, which makes phishing look "
+        "genuine and can get your domains blocklisted.",
+    ),
+    "S-AWS-SECRET-ENV": Risk(
+        HIGH,
+        "AWS secret access key",
+        "An AWS secret key in a project or shell file. With its key ID it gives full access to "
+        "your AWS account with your permissions.",
+    ),
     "S-AWS-SECRET": Risk(
         CRITICAL,
         "AWS secret access key",

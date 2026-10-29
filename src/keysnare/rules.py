@@ -96,6 +96,26 @@ FORMAT_RULES = (
         re.compile(r"-----BEGIN (?:(?:RSA|EC|DSA|OPENSSH) )?PRIVATE KEY-----"),
     ),
     FormatRule(
+        "F-STRIPE-LIVE-KEY",
+        "Stripe live secret or restricted key",
+        re.compile(r"\b[sr]k_live_[0-9A-Za-z]{24,}\b"),
+    ),
+    FormatRule(
+        "F-STRIPE-TEST-KEY",
+        "Stripe test-mode secret or restricted key",
+        re.compile(r"\b[sr]k_test_[0-9A-Za-z]{24,}\b"),
+    ),
+    FormatRule(
+        "F-SLACK-TOKEN",
+        "Slack token",
+        re.compile(r"\bxox[abprs]-(?:[0-9]+-){1,3}[0-9A-Za-z]{8,}\b"),
+    ),
+    FormatRule(
+        "F-SENDGRID-KEY",
+        "SendGrid API key",
+        re.compile(r"\bSG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}(?![0-9A-Za-z_-])"),
+    ),
+    FormatRule(
         "F-URL-CREDENTIALS",
         "Username and password in a URL",
         re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s:/@]+:([^\s:/@]+)@[^\s/]+"),

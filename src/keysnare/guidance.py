@@ -230,6 +230,40 @@ FIXES: dict[str, Fix] = {
             ROTATE,
         )
     ),
+    "F-STRIPE-LIVE-KEY": Fix(
+        (
+            "Roll the key in the Stripe Dashboard (Developers → API keys → Roll key), so the "
+            "old one stops working.",
+            "Where you can, use a restricted key with only the permissions the code needs.",
+            KEYCHAIN_ENV,
+            REMOVE_FROM_FILE,
+        )
+    ),
+    "F-STRIPE-TEST-KEY": Fix(
+        (
+            "Check that the matching live key is not stored nearby; that one can move real money.",
+            KEYCHAIN_ENV,
+            REMOVE_FROM_FILE,
+        )
+    ),
+    "F-SLACK-TOKEN": Fix(
+        (
+            "Revoke the token: for a bot token, regenerate it in your app's settings at "
+            "https://api.slack.com/apps (OAuth & Permissions); for a user token, remove the "
+            "app's access to your workspace.",
+            KEYCHAIN_ENV,
+            REMOVE_FROM_FILE,
+        )
+    ),
+    "F-SENDGRID-KEY": Fix(
+        (
+            "Delete the key in SendGrid (Settings → API Keys). If you need a new one, give it "
+            "only the Mail Send permission.",
+            KEYCHAIN_ENV,
+            REMOVE_FROM_FILE,
+        )
+    ),
+    "S-AWS-SECRET-ENV": AWS_KEY_FIX,
     "S-AWS-SECRET": AWS_KEY_FIX,
     "S-AWS-SESSION": AWS_TEMPORARY_FIX,
     "S-AWS-CACHE": AWS_TEMPORARY_FIX,

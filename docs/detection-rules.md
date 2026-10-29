@@ -60,6 +60,10 @@ longer word.
 | F-GOOGLE-API-KEY | Google API key (incl. Gemini) | `\bAIza[0-9A-Za-z_-]{35}\b` | Bills on your Google Cloud project. |
 | F-HF-TOKEN | Hugging Face token | `\bhf_[A-Za-z0-9]{34,}\b` | Read private models and datasets; write access can poison models. |
 | F-PRIVATE-KEY | Private key block | `-----BEGIN ((RSA\|EC\|DSA\|OPENSSH) )?PRIVATE KEY-----` | Full identity of a server, user or service. Encrypted keys are excluded; see S-SSH-KEY. |
+| F-STRIPE-LIVE-KEY | Stripe live secret or restricted key | `\b[sr]k_live_[0-9A-Za-z]{24,}\b` | Acts on your live Stripe account: refunds, payout details, customer data. |
+| F-STRIPE-TEST-KEY | Stripe test-mode key | `\b[sr]k_test_[0-9A-Za-z]{24,}\b` | Low risk on its own (no real money), but the live key is often nearby. |
+| F-SLACK-TOKEN | Slack bot, user, app or refresh token | `\bxox[abprs]-(?:[0-9]+-){1,3}[0-9A-Za-z]{8,}\b` | Reads and posts in your workspace; easy phishing of colleagues. |
+| F-SENDGRID-KEY | SendGrid API key | `\bSG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}(?![0-9A-Za-z_-])` | Sends email from your verified domains. |
 | F-URL-CREDENTIALS | Username and password in a URL | `\b[a-z][a-z0-9+.-]*://[^\s:/@]+:[^\s:/@]+@[^\s/]+` | Database, registry or Git passwords in plain view. The password part must pass the placeholder check. |
 
 `BEGIN ENCRYPTED PRIVATE KEY` (passphrase-protected PKCS#8) is deliberately **not** matched.
@@ -75,6 +79,7 @@ Each rule applies only to the files named in its section of `credential-location
 | ID | Matches |
 |---|---|
 | S-AWS-SECRET | `aws_secret_access_key = <value>` in any profile. |
+| S-AWS-SECRET-ENV | In `.env` files, MCP `env` blocks and shell history: a value assigned to `AWS_SECRET_ACCESS_KEY` (any case) that has the exact AWS secret key shape, 40 characters of `A-Z a-z 0-9 / +`. AWS secret keys have no prefix, but this name plus this shape is as certain as a format rule, so it is reported as High instead of the key-name rule's Low. |
 | S-AWS-SESSION | `aws_session_token = <value>`. Temporary, lower risk. |
 | S-AWS-CACHE | JSON in `cli/cache` with `Credentials.SecretAccessKey`, or in `sso/cache` with `accessToken`. Lower risk once `Expiration`/`expiresAt` has passed. |
 

@@ -183,6 +183,29 @@ def test_env_file_uses_key_name_rule_as_fallback() -> None:
     assert found(Category.ENV_FILE, text) == [("K-SECRET-NAME", 1, SECRET)]
 
 
+AWS_SECRET = "Fake" + "AwsSecret" + "a1B2" * 5 + "c3D4/+z"  # exactly 40 characters
+
+
+@pytest.mark.parametrize(
+    ("category", "text"),
+    [
+        (Category.ENV_FILE, f"AWS_SECRET_ACCESS_KEY={AWS_SECRET}\n"),
+        (Category.ENV_FILE, f"aws_secret_access_key = {AWS_SECRET}\n"),
+        (Category.SHELL_HISTORY, f"export AWS_SECRET_ACCESS_KEY={AWS_SECRET}\n"),
+        (
+            Category.MCP_CONFIG,
+            json.dumps({"mcpServers": {"s3": {"env": {"AWS_SECRET_ACCESS_KEY": AWS_SECRET}}}}),
+        ),
+    ],
+)
+def test_named_aws_secret_key_is_high_not_low(category: Category, text: str) -> None:
+    assert found(category, text) == [("S-AWS-SECRET-ENV", text.count("\n") or 1, AWS_SECRET)]
+
+
+def test_aws_secret_name_with_a_value_of_the_wrong_shape_stays_low() -> None:
+    assert rule_ids(Category.ENV_FILE, f"AWS_SECRET_ACCESS_KEY={SECRET}\n") == ["K-SECRET-NAME"]
+
+
 def test_malformed_json_still_gets_format_rules() -> None:
     text = '{\n  // comment\n  "token": "' + GITHUB_TOKEN + '"\n}\n'
 

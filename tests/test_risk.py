@@ -34,6 +34,11 @@ def test_every_rule_the_code_can_report_has_a_risk() -> None:
         ("S-NUGET-DPAPI", Severity.MEDIUM),
         ("S-AWS-SESSION", Severity.MEDIUM),
         ("K-SECRET-NAME", Severity.LOW),
+        ("F-STRIPE-LIVE-KEY", Severity.CRITICAL),
+        ("F-STRIPE-TEST-KEY", Severity.LOW),
+        ("F-SLACK-TOKEN", Severity.HIGH),
+        ("F-SENDGRID-KEY", Severity.HIGH),
+        ("S-AWS-SECRET-ENV", Severity.HIGH),
     ],
 )
 def test_severity_reflects_what_an_attacker_can_do(rule_id: str, severity: Severity) -> None:

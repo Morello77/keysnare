@@ -41,7 +41,8 @@ error. Full details: [docs/usage.md](docs/usage.md).
 - Docker registry logins, Git credentials, GitHub CLI tokens, tokens inside Git remote URLs
 - AI tool keys and logins: OpenAI, Anthropic, Google, Hugging Face, Claude Code, Codex, Gemini
   CLI, GitHub Copilot, MCP server configs
-- SSH private keys **without** a passphrase
+- Service keys: Stripe, Slack, SendGrid
+- SSH and other private keys **without** a passphrase
 - Secrets typed into shell history (bash, zsh, PowerShell)
 
 Every finding has a severity, says why it is risky, and gives fix steps for your operating

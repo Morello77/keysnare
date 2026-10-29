@@ -14,6 +14,10 @@ FAKES = {
     "F-GOOGLE-API-KEY": "AIza" + "a1B2c" * 7,
     "F-HF-TOKEN": "hf_" + "a1B2" * 9,
     "F-PRIVATE-KEY": "-----BEGIN " + "OPENSSH PRIVATE KEY-----",
+    "F-STRIPE-LIVE-KEY": "sk_" + "live_" + "a1B2" * 6,
+    "F-STRIPE-TEST-KEY": "rk_" + "test_" + "a1B2" * 6,
+    "F-SLACK-TOKEN": "xox" + "b-" + "1234567890" + "-" + "9876543210123" + "-" + "a1B2" * 6,
+    "F-SENDGRID-KEY": "SG" + "." + "a1B2c" * 4 + "xy" + "." + "a1B2c-" * 7 + "x",
 }
 
 
@@ -63,6 +67,10 @@ def test_finds_several_secrets_on_one_line() -> None:
         "https://user:" + "password" + "@host/simple",  # placeholder password
         "postgres://admin:${DB_PASSWORD}@db.local/app",  # environment reference
         "just an ordinary line of text",
+        "sk_" + "live_" + "short",  # too short for a Stripe key
+        "xox" + "b-notatoken",  # no numeric parts
+        "SG" + "." + "tooShort" + "." + "x",  # wrong segment lengths
+        "task_live_" + "a1B2" * 6,  # glued to a longer word
     ],
 )
 def test_lines_without_real_secrets_give_no_match(line: str) -> None:

@@ -29,6 +29,7 @@ PRESENCE_RULES = {
     Category.GCP_DB: "S-GCP-CREDENTIALS-DB",
 }
 
+AWS_SECRET_SHAPE = re.compile(r"[A-Za-z0-9/+]{40}")
 HISTORY_ASSIGNMENT = re.compile(
     r"(?:\b(?:export|set)\s+|\$env:)([A-Za-z_]\w*)\s*=\s*[\"']?([^\"'\s;]+)"
 )
@@ -198,10 +199,18 @@ def _apply(entries: list[Entry], rules: list[tuple[KeyTest, str]]) -> list[Detec
 
 def _named_secrets(entries: list[Entry], rule_id: str) -> list[Detection]:
     return [
-        Detection(rule_id, entry.line, entry.value)
+        Detection(_named_rule(entry.key[-1], entry.value, rule_id), entry.line, entry.value)
         for entry in entries
         if is_secret_name(entry.key[-1]) and is_secret_value(entry.value)
     ]
+
+
+def _named_rule(name: str, value: str, default_rule: str) -> str:
+    # An AWS secret key has no recognisable prefix, but its standard variable name plus its
+    # exact 40-character shape make it as certain as a format rule.
+    if name.lower() == "aws_secret_access_key" and AWS_SECRET_SHAPE.fullmatch(value):
+        return "S-AWS-SECRET-ENV"
+    return default_rule
 
 
 def _url_entries(entries: list[Entry], key_test: KeyTest, rule_id: str) -> list[Detection]:
@@ -280,7 +289,8 @@ def _shell_history(text: str) -> list[Detection]:
     for number, line in enumerate(text.splitlines(), start=1):
         for name, value in HISTORY_ASSIGNMENT.findall(line):
             if is_secret_name(name) and is_secret_value(value):
-                detections.append(Detection("S-HISTORY-SECRET", number, value))
+                rule_id = _named_rule(name, value, "S-HISTORY-SECRET")
+                detections.append(Detection(rule_id, number, value))
         for pattern in HISTORY_SECRET_ARGUMENTS:
             for value in pattern.findall(line):
                 if is_secret_value(value):
