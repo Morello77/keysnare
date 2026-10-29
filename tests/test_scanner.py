@@ -1,6 +1,8 @@
+import base64
 import builtins
 import io
 import os
+import struct
 import sys
 from pathlib import Path
 from typing import Any
@@ -291,6 +293,40 @@ def test_scanning_a_folder_inside_home_still_recognises_its_known_files(tmp_path
     result = scan(tmp_path / ".aws", home=tmp_path, env={}, platform="linux")
 
     assert [(f.rule_id, f.path) for f in result.findings] == [("S-AWS-SECRET", creds)]
+
+
+BEGIN = "-----BEGIN "
+
+
+def openssh_key(cipher: bytes) -> str:
+    body = b"openssh-key-v1\0" + struct.pack(">I", len(cipher)) + cipher + b"\0" * 64
+    return f"{BEGIN}OPENSSH PRIVATE KEY-----\n{base64.b64encode(body).decode()}\n"
+
+
+def test_private_keys_with_custom_names_are_found(tmp_path: Path) -> None:
+    ssh_key = write(tmp_path / "work" / "id_ed25519_deploy", openssh_key(b"none"))
+    pem = write(tmp_path / "certs" / "server.pem", f"{BEGIN}PRIVATE KEY-----\nMIIabc\n")
+    tls_key = write(tmp_path / "certs" / "api.key", f"{BEGIN}EC PRIVATE KEY-----\nMHcabc\n")
+    write(tmp_path / "work" / "id_ed25519_deploy.pub", "ssh-ed25519 AAAA deploy")
+    write(tmp_path / "certs" / "protected.pem", f"{BEGIN}ENCRYPTED PRIVATE KEY-----\nMIIabc\n")
+    write(tmp_path / "slides" / "talk.key", "PK\x03\x04 a Keynote file, not a key")
+
+    assert found_paths(tmp_path) == {
+        ("S-SSH-KEY", ssh_key),
+        ("S-PRIVATE-KEY-FILE", pem),
+        ("S-PRIVATE-KEY-FILE", tls_key),
+    }
+
+
+def test_key_files_are_judged_by_their_first_4_kb_only(tmp_path: Path) -> None:
+    # A real PEM key puts Proc-Type in its header. Placed after 4 KB here, it is never read,
+    # which shows that only the header part of a key file is read.
+    key = write(
+        tmp_path / "old.pem",
+        f"{BEGIN}RSA PRIVATE KEY-----\n" + "A" * 5000 + "\nProc-Type: 4,ENCRYPTED\n",
+    )
+
+    assert found_paths(tmp_path) == {("S-PRIVATE-KEY-FILE", key)}
 
 
 def test_findings_show_only_masked_secrets() -> None:

@@ -45,9 +45,12 @@ class Category(Enum):
     # Found by walking folders, not at fixed locations.
     ENV_FILE = "env-file"
     GIT_REMOTE = "git-remote"
+    PRIVATE_KEY = "private-key"
 
 
-WALK_ONLY_CATEGORIES = frozenset({Category.ENV_FILE, Category.GIT_REMOTE})
+WALK_ONLY_CATEGORIES = frozenset({Category.ENV_FILE, Category.GIT_REMOTE, Category.PRIVATE_KEY})
+# Key files are judged by their header and cipher name, which always sit at the start.
+KEY_CATEGORIES = frozenset({Category.SSH_KEY, Category.PRIVATE_KEY})
 
 
 @dataclass(frozen=True)

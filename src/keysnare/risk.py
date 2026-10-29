@@ -197,6 +197,12 @@ RISKS: dict[str, Risk] = {
         "Anyone who copies this file can log in to your servers and push to your repositories "
         "as you. A passphrase would make the copy useless.",
     ),
+    "S-PRIVATE-KEY-FILE": Risk(
+        HIGH,
+        "Private key without a passphrase",
+        "Anyone who copies this file can act as the server, service or person the key belongs "
+        "to. A passphrase would make the copy useless.",
+    ),
     "S-AZURE-MSAL": Risk(
         HIGH,
         "Azure CLI login",

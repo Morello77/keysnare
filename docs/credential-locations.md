@@ -48,7 +48,9 @@ in the detection rules.
 - On Windows it reads folders and files whose path is longer than the classic 260-character limit,
   whether or not long-path support is turned on for the machine.
 - Files it picks up: `.env` and `.env.*` (templates too, since a real secret in a template is
-  still a leak), `.npmrc`, `nuget.config`, `.cursor/mcp.json`, `*.ppk` and `.git/config`.
+  still a leak), `.npmrc`, `nuget.config`, `.cursor/mcp.json`, `.git/config`, and private keys:
+  `*.ppk`, `id_*` (except `*.pub`), `*.pem` and `*.key`. Only the first 4 KB of a key file is
+  read, which holds its header and cipher name.
 - A single file given by the user that is none of the known types is checked like a `.env` file.
 - Files and folders that cannot be read, and walked files over 1 MB, are reported as skipped,
   never silently ignored.
@@ -170,6 +172,8 @@ rules match them by key format, whichever file they are in.
 | Default keys | `~\.ssh\id_rsa`, `id_ed25519`, `id_ecdsa`, `id_dsa` | `~/.ssh/` (same names) |
 | Custom keys | Any file named by `IdentityFile` in `~\.ssh\config` | same |
 | PuTTY keys | `*.ppk` files (location chosen by the user) | rare |
+| Keys with custom names | `id_*` files (not `*.pub`) anywhere the walk reaches | same |
+| Other private keys | `*.pem` and `*.key` files anywhere the walk reaches (TLS, service keys) | same |
 
 - **Risk:** only keys **without a passphrase**. A key protected by a passphrase is useless to a
   stealer without it.

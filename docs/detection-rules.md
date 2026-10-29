@@ -131,9 +131,13 @@ Each rule applies only to the files named in its section of `credential-location
 | S-COPILOT-TOKEN | `oauth_token` in Copilot `hosts.json` / `apps.json`. (verify) |
 | S-CONFIG-APIKEY | `apiKey` / `api_key` / `api-key` values in Continue and Aider config. (verify) |
 
-### SSH (`~/.ssh/`, `IdentityFile` targets, `*.ppk`)
+### Private keys (`~/.ssh/`, `IdentityFile` targets, and `*.ppk`, `id_*`, `*.pem`, `*.key` found by the folder walk)
 
-**S-SSH-KEY** reports a private key **only when it has no passphrase**:
+**S-SSH-KEY** reports an SSH key (`~/.ssh/`, `IdentityFile` targets, `*.ppk`, and `id_*` files
+other than `*.pub`) **only when it has no passphrase**. **S-PRIVATE-KEY-FILE** does the same for
+`*.pem` and `*.key` files, which often hold TLS or service keys. A `.pem` file that holds only
+certificates, or a `.key` file that is not a key at all (such as a Keynote presentation), is not
+reported.
 
 | Key format | Header | Unencrypted when |
 |---|---|---|
@@ -142,8 +146,10 @@ Each rule applies only to the files named in its section of `credential-location
 | PKCS#8 | `BEGIN PRIVATE KEY` | Always unencrypted. The encrypted form uses `BEGIN ENCRYPTED PRIVATE KEY`. |
 | PuTTY | `PuTTY-User-Key-File-2:` or `-3:` | The `Encryption:` line says `none`. |
 
-Only the header and the cipher field are read to make this decision. The key itself is never
-decoded beyond that.
+Only the header and the cipher field are used to make this decision: KeySnare reads at most the
+first 4 KB of a key file, and never decodes the key itself beyond the cipher name. A key placed
+after 4 KB of other content in the same file (for example after a long certificate chain) is
+not found.
 
 ### Azure CLI (`~/.azure/`)
 

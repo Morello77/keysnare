@@ -10,6 +10,7 @@ from pathlib import Path
 
 from keysnare.detect import PRESENCE_RULES, find_secrets
 from keysnare.locations import (
+    KEY_CATEGORIES,
     Category,
     CredentialFile,
     Platform,
@@ -27,6 +28,7 @@ WALK_THREADS = 16
 Progress = Callable[[int], None]
 
 MAX_WALK_FILE_BYTES = 1024 * 1024
+KEY_HEADER_CHARS = 4096
 # Windows refuses paths over 260 characters unless they carry the \\?\ prefix. Prefixing from 240
 # leaves room for the file names appended to a folder path.
 WINDOWS_LONG_PATH_FROM = 240
@@ -157,8 +159,10 @@ def walk_category(file_name: str, folder_name: str) -> Category | None:
         return Category.NUGET
     if name == "mcp.json" and folder_name.lower() == ".cursor":
         return Category.MCP_CONFIG
-    if name.endswith(".ppk"):
+    if name.endswith(".ppk") or (name.startswith("id_") and not name.endswith(".pub")):
         return Category.SSH_KEY
+    if name.endswith((".pem", ".key")):
+        return Category.PRIVATE_KEY
     return None
 
 
@@ -281,7 +285,11 @@ def _scan_file(file: CredentialFile) -> list[Finding]:
         if os_path.stat().st_size == 0:
             return []
         return [Finding(PRESENCE_RULES[file.category], file.category, file.path, None)]
-    text = os_path.read_text(encoding="utf-8", errors="replace")
+    if file.category in KEY_CATEGORIES:
+        with os_path.open(encoding="utf-8", errors="replace") as key_file:
+            text = key_file.read(KEY_HEADER_CHARS)
+    else:
+        text = os_path.read_text(encoding="utf-8", errors="replace")
     return [
         Finding(d.rule_id, file.category, file.path, d.line, d.secret)
         for d in find_secrets(file.category, text)

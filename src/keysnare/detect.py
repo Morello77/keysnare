@@ -140,7 +140,9 @@ def find_secrets(category: Category, text: str) -> list[Detection]:
     Categories in PRESENCE_RULES are binary stores that the caller reports without reading.
     """
     if category is Category.SSH_KEY:
-        return _ssh_key(text)
+        return _private_key(text, "S-SSH-KEY")
+    if category is Category.PRIVATE_KEY:
+        return _private_key(text, "S-PRIVATE-KEY-FILE")
     detections = [*_structure(category, text), *_format(text), *_fallback(category, text)]
     return _one_per_secret(detections)
 
@@ -270,7 +272,7 @@ def _git_credentials(text: str) -> list[Detection]:
     return detections
 
 
-def _ssh_key(text: str) -> list[Detection]:
+def _private_key(text: str, rule_id: str) -> list[Detection]:
     if ssh_key_protection(text) is not KeyProtection.UNENCRYPTED:
         return []
     header_line = next(
@@ -281,7 +283,7 @@ def _ssh_key(text: str) -> list[Detection]:
         ),
         None,
     )
-    return [Detection("S-SSH-KEY", header_line)]
+    return [Detection(rule_id, header_line)]
 
 
 def _shell_history(text: str) -> list[Detection]:

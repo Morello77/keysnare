@@ -342,6 +342,17 @@ FIXES: dict[str, Fix] = {
     ),
     "S-CONFIG-APIKEY": AI_KEY_FIX,
     "S-SSH-KEY": SSH_FIX,
+    "S-PRIVATE-KEY-FILE": Fix(
+        (
+            "If this is an SSH key, add a passphrase: `ssh-keygen -p -f <key file>`.",
+            "For any other key, write an encrypted copy with "
+            "`openssl pkey -in <key file> -aes256 -out <protected key file>`, check that the "
+            "program using it accepts the passphrase, then delete the unencrypted file.",
+            "Keys for TLS certificates belong on the server or in a secrets manager, not in "
+            "project folders. If the key may have been copied, issue a new certificate or key "
+            "and revoke the old one.",
+        )
+    ),
     "S-AZURE-MSAL": Fix(
         (
             "Run `az logout` when you stop using Azure, or `az account clear` "
