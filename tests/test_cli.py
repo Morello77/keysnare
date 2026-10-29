@@ -234,6 +234,45 @@ def test_traps_are_windows_only(
     assert "Windows-only" in err
 
 
+HOME = Path("/home/dev")
+
+
+@pytest.mark.parametrize(
+    ("root", "expected"),
+    [
+        (None, True),
+        (HOME, True),
+        (HOME / "code" / "app", True),
+        (Path("/"), True),
+        (Path("/srv/projects"), False),
+        (Path("/home/devops"), False),
+    ],
+)
+def test_trap_records_are_read_only_when_a_decoy_could_be_in_the_scan(
+    root: Path | None, expected: bool
+) -> None:
+    assert cli.may_hold_decoys(root, HOME) is expected
+
+
+def test_folder_scan_outside_home_never_reads_trap_records(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "is_windows", lambda: True)
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path / "home"))
+    loaded: list[Path] = []
+    monkeypatch.setattr(cli, "load_state", lambda path: loaded.append(path))
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "appdata"))
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (tmp_path / "home").mkdir()
+
+    code, _, _ = run(["scan", str(elsewhere)], capsys)
+    run(["scan", str(tmp_path / "home")], capsys)
+
+    assert code == EXIT_OK
+    assert loaded == [tmp_path / "appdata" / "KeySnare" / "traps.json"]
+
+
 class Terminal(io.StringIO):
     def isatty(self) -> bool:
         return True

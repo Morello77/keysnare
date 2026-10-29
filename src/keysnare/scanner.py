@@ -124,15 +124,18 @@ def scan(
     """
     home = home or Path.home()
     platform = platform or current_platform()
-    known = existing_files(known_locations(home, os.environ if env is None else env, platform))
+    locations = known_locations(home, os.environ if env is None else env, platform)
+    if root is not None:
+        # Filtered before any existence check, so a folder scan never looks outside the folder.
+        locations = [loc for loc in locations if loc.path.is_relative_to(root)]
+    known = existing_files(locations)
     skipped: list[SkippedPath] = []
     if root is None:
         candidates = [*known, *_walk(home, home, skipped, progress)]
     elif root.is_file():
         candidates = [_known_or_walked(root, known)]
     else:
-        inside = [file for file in known if file.path.is_relative_to(root)]
-        candidates = [*inside, *_walk(root, home, skipped, progress)]
+        candidates = [*known, *_walk(root, home, skipped, progress)]
     decoy_keys = {canonical(decoy) for decoy in decoys}
     to_read = []
     for file in _unique(candidates):

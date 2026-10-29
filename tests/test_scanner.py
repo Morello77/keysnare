@@ -1,10 +1,13 @@
+import builtins
+import io
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from keysnare.locations import Category
+from keysnare.locations import Category, Platform
 from keysnare.scanner import MAX_WALK_FILE_BYTES, Finding, scan
 
 # Fake secrets are assembled at runtime so no complete token appears in the repository.
@@ -233,6 +236,61 @@ def test_results_are_in_the_same_order_every_time(tmp_path: Path) -> None:
 
     assert first.files_checked == second.files_checked
     assert [f.path for f in first.findings] == [f.path for f in second.findings]
+
+
+@pytest.fixture
+def filesystem_calls(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Record the path of every file-system lookup, listing and open during a test."""
+    seen: list[str] = []
+
+    def recording(function: Any) -> Any:
+        def wrapper(path: Any, *args: Any, **kwargs: Any) -> Any:
+            if isinstance(path, (str, bytes, os.PathLike)):
+                seen.append(os.path.abspath(os.fsdecode(path)))
+            return function(path, *args, **kwargs)
+
+        return wrapper
+
+    for module, name in [
+        (os, "stat"),
+        (os, "lstat"),
+        (os, "scandir"),
+        (os.path, "exists"),
+        (os.path, "lexists"),
+        (os.path, "isfile"),
+        (os.path, "isdir"),
+        (io, "open"),
+        (builtins, "open"),
+    ]:
+        monkeypatch.setattr(module, name, recording(getattr(module, name)))
+    return seen
+
+
+@pytest.mark.parametrize("platform", ["windows", "linux"])
+def test_scanning_a_folder_makes_no_filesystem_calls_outside_it(
+    tmp_path: Path, filesystem_calls: list[str], platform: Platform
+) -> None:
+    home = tmp_path / "home"
+    write(home / ".aws/credentials", f"[d]\naws_secret_access_key = {SECRET}\n")
+    write(home / ".npmrc", f"//r/:_authToken={SECRET}\n")
+    root = tmp_path / "elsewhere" / "project"
+    write(root / ".env", f"API_TOKEN={SECRET}\n")
+    filesystem_calls.clear()
+
+    result = scan(root, home=home, env={}, platform=platform)
+
+    assert [f.path for f in result.findings] == [root / ".env"]
+    outside = [p for p in filesystem_calls if not Path(p).is_relative_to(root)]
+    assert outside == []
+
+
+def test_scanning_a_folder_inside_home_still_recognises_its_known_files(tmp_path: Path) -> None:
+    creds = write(tmp_path / ".aws/credentials", f"[d]\naws_secret_access_key = {SECRET}\n")
+    write(tmp_path / ".npmrc", f"//r/:_authToken={SECRET}\n")
+
+    result = scan(tmp_path / ".aws", home=tmp_path, env={}, platform="linux")
+
+    assert [(f.rule_id, f.path) for f in result.findings] == [("S-AWS-SECRET", creds)]
 
 
 def test_findings_show_only_masked_secrets() -> None:

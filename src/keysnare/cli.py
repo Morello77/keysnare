@@ -176,8 +176,13 @@ def shows_progress(args: argparse.Namespace, stream: TextIO) -> bool:
     return stream.isatty() and not (args.quiet or args.json or args.sarif)
 
 
-def _installed_decoys() -> list[Path]:
-    if not is_windows():
+def may_hold_decoys(root: Path | None, home: Path) -> bool:
+    """Return True if the scan could reach a decoy; decoys only ever live in the home folder."""
+    return root is None or root.is_relative_to(home) or home.is_relative_to(root)
+
+
+def _installed_decoys(root: Path | None) -> list[Path]:
+    if not is_windows() or not may_hold_decoys(root, Path.home()):
         return []
     try:
         state = load_state(data_dir(os.environ) / STATE_FILE_NAME)
@@ -194,7 +199,7 @@ def _scan_command(args: argparse.Namespace) -> int:
     started = time.perf_counter()
     progress = ProgressLine(sys.stderr) if shows_progress(args, sys.stderr) else None
     try:
-        result = scan(root, decoys=_installed_decoys(), progress=progress)
+        result = scan(root, decoys=_installed_decoys(root), progress=progress)
     finally:
         if progress:
             progress.clear()
