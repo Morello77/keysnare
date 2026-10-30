@@ -49,6 +49,16 @@ dev = [
 packages = ["src/keysnare"]
 
 [tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "tests",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "pyproject.toml",
+]
 exclude = ["docs/demo.gif"]
 
 [tool.black]

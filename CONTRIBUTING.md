@@ -58,6 +58,10 @@ pytest
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
   `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, `chore:`.
 
+## Releases
+
+Releases are built only by the release workflow; never upload locally built packages.
+
 ## Security issues
 
 Do not open a public issue for a vulnerability. See [SECURITY.md](SECURITY.md).
