@@ -15,9 +15,9 @@ in the detection rules.
   check them, or it misses relocated files. Stealers check them too.
 - **Not a finding when** lists the cases where the file exists but holds no plain-text secret.
   These keep false positives down.
-- Entries marked **(verify)** come from tool documentation but have not yet been confirmed on a
-  real machine. Confirm each before writing its detection rule. **(verified: Windows)** means the
-  file and its key names were confirmed on a real Windows machine.
+- Entries marked **(from docs)** are based on published documentation and have not yet been
+  confirmed on a real install. **(verified: Windows)** means the file and its key names were
+  confirmed on a real Windows machine.
 
 ---
 
@@ -125,7 +125,7 @@ in the detection rules.
 |---|---|---|---|
 | pypirc | `~\.pypirc` | `~/.pypirc` | `~/.pypirc` |
 | pip config | `%APPDATA%\pip\pip.ini` | `~/Library/Application Support/pip/pip.conf`, `~/.config/pip/pip.conf` | `~/.config/pip/pip.conf`, `~/.pip/pip.conf` |
-| Poetry fallback | `%APPDATA%\pypoetry\auth.toml` (verify) | `~/Library/Application Support/pypoetry/auth.toml` (verify) | `~/.config/pypoetry/auth.toml` (verify) |
+| Poetry fallback | `%APPDATA%\pypoetry\auth.toml` (from docs) | `~/Library/Application Support/pypoetry/auth.toml` (from docs) | `~/.config/pypoetry/auth.toml` (from docs) |
 
 - **Holds:** `.pypirc` has `password = pypi-...` upload tokens. pip config can contain
   `index-url = https://user:password@host/...`. Poetry writes `auth.toml` only when no keychain
@@ -148,19 +148,19 @@ in the detection rules.
 ## 8. AI tool keys
 
 AI coding tools are a newer target. Their keys are expensive to abuse and are often stored in
-plain config files. Most entries here are **(verify)**.
+plain config files. Most entries here are **(from docs)**.
 
 | Tool | Location |
 |---|---|
 | Claude Code | `~/.claude/.credentials.json` on Windows and Linux. Keys: `claudeAiOauth.accessToken`, `claudeAiOauth.refreshToken`. macOS uses the Keychain. (verified: Windows) |
 | Claude Desktop MCP config | `%APPDATA%\Claude\claude_desktop_config.json`, `~/Library/Application Support/Claude/claude_desktop_config.json`. API keys are often put in each server's `env` section. |
-| Cursor MCP config | `~/.cursor/mcp.json` and `.cursor/mcp.json` in projects (verify) |
+| Cursor MCP config | `~/.cursor/mcp.json` and `.cursor/mcp.json` in projects (from docs) |
 | OpenAI Codex CLI | `~/.codex/auth.json`. Keys: `OPENAI_API_KEY` (may be `null`), `tokens.access_token`, `tokens.refresh_token`, `tokens.id_token`. A `null` API key is not a finding on its own. (verified: Windows) |
-| Gemini CLI | `~/.gemini/.env`, `~/.gemini/oauth_creds.json` (verify) |
+| Gemini CLI | `~/.gemini/.env`, `~/.gemini/oauth_creds.json` (from docs) |
 | Hugging Face | `~/.cache/huggingface/token`. Override: `HF_HOME`, `HF_TOKEN_PATH`. |
-| GitHub Copilot | `~/.config/github-copilot/hosts.json` or `apps.json`. On Windows, `%LOCALAPPDATA%\github-copilot\`. (verify) |
-| Continue | `~/.continue/config.json` or `config.yaml` (`apiKey` fields) (verify) |
-| Aider | `~/.aider.conf.yml` (verify) |
+| GitHub Copilot | `~/.config/github-copilot/hosts.json` or `apps.json`. On Windows, `%LOCALAPPDATA%\github-copilot\`. (from docs) |
+| Continue | `~/.continue/config.json` or `config.yaml` (`apiKey` fields) (from docs) |
+| Aider | `~/.aider.conf.yml` (from docs) |
 
 Keys for OpenAI, Anthropic, Google, etc. also appear in `.env` files (section 1). Detection
 rules match them by key format, whichever file they are in.
@@ -187,9 +187,9 @@ rules match them by key format, whichever file they are in.
 | | Windows | macOS / Linux |
 |---|---|---|
 | Config folder | `~\.azure\` | `~/.azure/` |
-| Token cache | `msal_token_cache.bin` (DPAPI-encrypted) (verify) | `msal_token_cache.json` (plain text) (verify) |
-| Service principals | `service_principal_entries.bin` (DPAPI-encrypted) (verify) | `service_principal_entries.json` (plain text) (verify) |
-| Old CLI versions | `accessTokens.json` (plain text) (verify) | same |
+| Token cache | `msal_token_cache.bin` (DPAPI-encrypted) (from docs) | `msal_token_cache.json` (plain text) (from docs) |
+| Service principals | `service_principal_entries.bin` (DPAPI-encrypted) (from docs) | `service_principal_entries.json` (plain text) (from docs) |
+| Old CLI versions | `accessTokens.json` (plain text) (from docs) | same |
 
 - **Holds:** refresh tokens for signed-in accounts. Service principal entries can hold a
   client secret or certificate.
@@ -205,8 +205,8 @@ rules match them by key format, whichever file they are in.
 |---|---|---|
 | Config folder | `%APPDATA%\gcloud\` | `~/.config/gcloud/` |
 | Application default credentials | `application_default_credentials.json` | same |
-| Stored credentials | `credentials.db`, `access_tokens.db` (SQLite) (verify) | same |
-| Per-account copies | `legacy_credentials\<account>\adc.json` (verify) | `legacy_credentials/<account>/adc.json` (verify) |
+| Stored credentials | `credentials.db`, `access_tokens.db` (SQLite) (from docs) | same |
+| Per-account copies | `legacy_credentials\<account>\adc.json` (from docs) | `legacy_credentials/<account>/adc.json` (from docs) |
 
 - **Holds:** `application_default_credentials.json` has either a user `refresh_token` plus
   `client_secret`, or a service account `private_key`. The `.db` files hold refresh tokens.
@@ -231,7 +231,7 @@ rules match them by key format, whichever file they are in.
 
 | Shell | Windows | macOS / Linux |
 |---|---|---|
-| PowerShell | `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt` (verified: Windows) | `~/.local/share/powershell/PSReadLine/ConsoleHost_history.txt` (verify) |
+| PowerShell | `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt` (verified: Windows) | `~/.local/share/powershell/PSReadLine/ConsoleHost_history.txt` (from docs) |
 | bash | `~/.bash_history` (Git Bash, WSL) | `~/.bash_history` |
 | zsh | n/a | `~/.zsh_history` (macOS default shell) |
 

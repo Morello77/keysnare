@@ -4,6 +4,9 @@ How the scanner recognises a secret once it has opened a file from
 [credential-locations.md](credential-locations.md). Each rule's severity and plain-English risk
 are in `src/keysnare/risk.py`.
 
+Rules marked **(from docs)** are based on published documentation and have not yet been confirmed
+on a real install.
+
 ## Three kinds of rule
 
 | Kind | Matches | Confidence | Example |
@@ -127,9 +130,9 @@ Each rule applies only to the files named in its section of `credential-location
 | S-CODEX-AUTH | `OPENAI_API_KEY` is a non-null string, or `tokens.refresh_token` is non-empty. |
 | S-MCP-ENV | Any value under `mcpServers.<name>.env` in Claude Desktop or Cursor MCP config. Checked with format rules first, then the key-name rule. |
 | S-HF-TOKEN-FILE | Hugging Face `token` file is non-empty. |
-| S-GEMINI-OAUTH | `refresh_token` in `oauth_creds.json`. (verify) |
-| S-COPILOT-TOKEN | `oauth_token` in Copilot `hosts.json` / `apps.json`. (verify) |
-| S-CONFIG-APIKEY | `apiKey` / `api_key` / `api-key` values in Continue and Aider config. (verify) |
+| S-GEMINI-OAUTH | `refresh_token` in `oauth_creds.json`. (from docs) |
+| S-COPILOT-TOKEN | `oauth_token` in Copilot `hosts.json` / `apps.json`. (from docs) |
+| S-CONFIG-APIKEY | `apiKey` / `api_key` / `api-key` values in Continue and Aider config. (from docs) |
 
 ### Private keys (`~/.ssh/`, `IdentityFile` targets, and `*.ppk`, `id_*`, `*.pem`, `*.key` found by the folder walk)
 
@@ -155,8 +158,8 @@ not found.
 
 | ID | Matches |
 |---|---|
-| S-AZURE-MSAL | `msal_token_cache.json` has a non-empty `RefreshToken` section. (verify) |
-| S-AZURE-SP | `service_principal_entries.json` has a `client_secret` value. (verify) |
+| S-AZURE-MSAL | `msal_token_cache.json` has a non-empty `RefreshToken` section. (from docs) |
+| S-AZURE-SP | `service_principal_entries.json` has a `client_secret` value. (from docs) |
 | S-AZURE-DPAPI | `msal_token_cache.bin` or `service_principal_entries.bin` exists and is non-empty. Encrypted; lower risk. |
 | S-AZURE-LEGACY | `accessTokens.json` exists and is non-empty. |
 
