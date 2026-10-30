@@ -48,6 +48,9 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/keysnare"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["docs/demo.gif"]
+
 [tool.black]
 line-length = 100
 target-version = ["py310"]
