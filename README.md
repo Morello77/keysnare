@@ -10,7 +10,7 @@ credentials that alert you the moment a program reads them, and tells you, step 
 move each real secret somewhere safer. It runs entirely offline, has zero runtime dependencies,
 and never prints a full secret.
 
-> **Demo:** coming soon.
+![KeySnare finding fake credentials in a demo folder, then catching a simulated theft of a decoy](https://raw.githubusercontent.com/Morello77/keysnare/main/docs/demo.gif)
 
 ## Install
 
