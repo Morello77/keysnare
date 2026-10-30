@@ -12,6 +12,19 @@ and never prints a full secret.
 
 ![KeySnare finding fake credentials in a demo folder, then catching a simulated theft of a decoy](https://raw.githubusercontent.com/Morello77/keysnare/main/docs/demo.gif)
 
+## Why I built this
+
+I’m Morello, a developer in Nigeria. For the better part of this year, most of the cybersecurity news I read pointed to the same thing: exposed keys. Poisoned npm packages, and, most interesting to me, PyPI packages stealing developers’ keys. How do you protect yourself from attacks like that? So I decided to build a tool and see if it helps. It’s called KeySnare. When I first ran it on my PC, it found three tokens I didn’t know were there.
+
+What I wanted was simple: show me what a stealer would grab from my machine, tell me how to fix it, and warn me if something tries to take it. That’s what KeySnare does:
+
+- It looks at your machine, not just your code. Most secret scanners are built to check code before you push it. Stealers don’t care about your repo. They go straight for the files on your computer: .env files, cloud logins, npm and PyPI tokens, SSH keys, AI tool keys, even your shell history. KeySnare checks those.
+- It sets traps. On Windows, KeySnare can plant fake keys where stealers look. If any program reads one, you get a notification with the name of that program. It all happens on your machine, with no online service involved.
+- It tells you how to fix things. Every finding says why it matters and gives steps for your operating system.
+- It’s built so you can trust it. It works fully offline and has no dependencies. It never runs as administrator, never shows a full secret, and never touches your browser passwords. A tool that protects your keys shouldn’t become a risk itself.
+
+It doesn’t block attacks, and I say that openly in the limits section below. But knowing what’s exposed, and knowing fast when something goes after it, is a big step. I hope it helps you the way it helped me.
+
 ## Install
 
 ```
