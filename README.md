@@ -120,7 +120,7 @@ shows its verified source repository and workflow. To check one yourself, use th
 
 ```
 python -m pip install pypi-attestations
-pypi-attestations verify pypi --repository https://github.com/Morello77/keysnare pypi:keysnare-0.1.0-py3-none-any.whl
+pypi-attestations verify pypi --repository https://github.com/Morello77/keysnare pypi:keysnare-0.1.1-py3-none-any.whl
 ```
 
 ## Contributing and security

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-11-10)
+
+- The scan summary now uses the singular when there is one item, for example "1 file checked"
+  instead of "1 files checked".
+- The source package on PyPI now includes this changelog.
+
 ## 0.1.0 (2026-10-30)
 
 The first release of KeySnare. It shows what a credential stealer would grab from a developer

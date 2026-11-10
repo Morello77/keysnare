@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "keysnare"
-version = "0.1.0"
+version = "0.1.1"
 description = "Find plain-text credentials on developer machines and trap credential stealers."
 readme = "README.md"
 requires-python = ">=3.10"
