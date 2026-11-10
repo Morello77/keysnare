@@ -21,8 +21,10 @@ SECRET = "fake" + "Secret" + "Value123"
 ANSI = "\x1b["
 
 
-def context(findings: list[Finding], skipped: list[SkippedPath] | None = None) -> ReportContext:
-    result = ScanResult(findings, [HOME / ".npmrc"] * 12, skipped or [], "windows")
+def context(
+    findings: list[Finding], skipped: list[SkippedPath] | None = None, files: int = 12
+) -> ReportContext:
+    result = ScanResult(findings, [HOME / ".npmrc"] * files, skipped or [], "windows")
     return ReportContext(result, 8.04, HOME, show_full_paths=False)
 
 
@@ -77,6 +79,34 @@ def test_skipped_paths_are_counted_and_listed() -> None:
 
     assert "1 path skipped" in text
     assert f"{Path('~') / 'locked'}  could not read: Permission denied" in text
+
+
+@pytest.mark.parametrize(
+    ("count", "expected"),
+    [
+        (
+            1,
+            "1 finding (0 critical, 0 high, 0 medium, 1 low) in 1 file checked, "
+            "scanned in 8.0s; 1 path skipped",
+        ),
+        (
+            2,
+            "2 findings (0 critical, 0 high, 0 medium, 2 low) in 2 files checked, "
+            "scanned in 8.0s; 2 paths skipped",
+        ),
+    ],
+)
+def test_summary_uses_singular_only_for_one(count: int, expected: str) -> None:
+    findings = [FINDINGS[0]] * count
+    skipped = [SkippedPath(HOME / "locked", "could not read: Permission denied")] * count
+
+    assert render_summary(context(findings, skipped, files=count)) == expected
+
+
+def test_summary_without_findings_uses_singular_for_one_file() -> None:
+    assert render_summary(context([], files=1)) == (
+        "No plain-text credentials found in 1 file checked, scanned in 8.0s"
+    )
 
 
 def test_quiet_summary_is_one_line() -> None:

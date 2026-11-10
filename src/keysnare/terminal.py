@@ -77,19 +77,21 @@ def render_summary(context: ReportContext) -> str:
     """Return one line: counts per severity, files checked, scan time and skipped paths."""
     result = context.result
     scanned = (
-        f"in {len(result.files_checked)} files checked, "
+        f"in {_count(len(result.files_checked), 'file')} checked, "
         f"scanned in {context.duration_seconds:.1f}s"
     )
     if result.findings:
         counts = ", ".join(f"{n} {severity.value}" for severity, n in context.counts.items())
-        noun = "finding" if len(result.findings) == 1 else "findings"
-        line = f"{len(result.findings)} {noun} ({counts}) {scanned}"
+        line = f"{_count(len(result.findings), 'finding')} ({counts}) {scanned}"
     else:
         line = f"No plain-text credentials found {scanned}"
     if result.skipped:
-        noun = "path" if len(result.skipped) == 1 else "paths"
-        line += f"; {len(result.skipped)} {noun} skipped"
+        line += f"; {_count(len(result.skipped), 'path')} skipped"
     return line
+
+
+def _count(n: int, noun: str) -> str:
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
 
 
 def render_text(context: ReportContext, color: bool) -> str:
