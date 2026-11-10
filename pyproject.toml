@@ -57,6 +57,7 @@ only-include = [
     "LICENSE",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "CHANGELOG.md",
     "pyproject.toml",
 ]
 exclude = ["docs/demo.gif"]
